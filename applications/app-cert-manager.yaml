@@ -9,7 +9,7 @@ spec:
     namespace: cert-manager
   source:
     path: workloads/cert-manager/
-    repoURL: https://github.com/<repo>
+    repoURL: https://github.com/pavan-official/argocd-gitops-pavan
     targetRevision: main
   project: default
   syncPolicy:
