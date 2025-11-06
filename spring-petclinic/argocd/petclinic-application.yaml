@@ -10,7 +10,7 @@ spec:
   project: default
   
   source:
-    repoURL: https://github.com/YOUR_USERNAME/spring-boot-app.git  # Update with your repo URL
+    repoURL: https://github.com/pavan-official/argocd-gitops-pavan.git
     targetRevision: main
     path: spring-petclinic/k8s
     # ArgoCD will watch this path for any manifest changes
