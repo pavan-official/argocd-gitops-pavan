@@ -1,0 +1,48 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: petclinic-app
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/YOUR_USERNAME/spring-boot-app.git  # Update with your repo URL
+    targetRevision: main
+    path: spring-petclinic/k8s
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    
+  # Health checks
+  healthChecks:
+    - apiVersion: v1
+      kind: Service
+      namespace: default
+      name: petclinic
+    - apiVersion: apps/v1
+      kind: Deployment
+      namespace: default
+      name: petclinic
+  
+  # Ignore differences for auto-generated fields
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+

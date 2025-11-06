@@ -1,0 +1,141 @@
+# Datadog Helm Chart Values
+# Install with: helm install datadog-agent datadog/datadog -f values.yaml
+
+datadog:
+  apiKey: "YOUR_DATADOG_API_KEY"  # Replace with your Datadog API key
+  appKey: "YOUR_DATADOG_APP_KEY"  # Replace with your Datadog App key
+  site: "datadoghq.com"  # Change to datadoghq.eu for EU, us3.datadoghq.com for US3, etc.
+  
+  # Enable Logs collection
+  logsEnabled: true
+  logsConfigContainerCollectAll: true
+  
+  # Enable APM (Application Performance Monitoring)
+  apm:
+    portEnabled: true
+    port: 8126
+    useSocketVolume: true
+    socketPath: /var/run/datadog/apm.socket
+  
+  # Enable Process Monitoring
+  processAgent:
+    enabled: true
+    processCollection: true
+  
+  # Enable Network Performance Monitoring
+  networkMonitoring:
+    enabled: true
+  
+  # Enable OOM Kill monitoring
+  oomKill: true
+  
+  # Enable Container Runtime monitoring
+  containerRuntime: "containerd"  # Use "docker" for Docker runtime
+  
+  # Kubernetes integration
+  kubeStateMetricsEnabled: true
+  kubeStateMetricsCore:
+    enabled: true
+  
+  # Cluster Agent for advanced features
+  clusterAgent:
+    enabled: true
+    metricsProvider:
+      enabled: true
+      useDatadogMetrics: true
+    admissionController:
+      enabled: true
+      mutateUnlabelled: false
+      serviceName: "datadog-cluster-agent"
+  
+  # Java APM settings
+  java:
+    enabled: true
+    # Java agent will be auto-injected for pods with annotations
+    # or use init containers as shown in petclinic.yml
+  
+  # Resource limits
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Node Agent DaemonSet configuration
+agents:
+  containers:
+    agent:
+      env:
+        - name: DD_APM_ENABLED
+          value: "true"
+        - name: DD_APM_NON_LOCAL_TRAFFIC
+          value: "true"
+        - name: DD_LOGS_ENABLED
+          value: "true"
+        - name: DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL
+          value: "true"
+        - name: DD_CONTAINER_EXCLUDE
+          value: "name:datadog-agent"
+        - name: DD_PROCESS_AGENT_ENABLED
+          value: "true"
+        - name: DD_CLUSTER_AGENT_ENABLED
+          value: "true"
+        - name: DD_CLUSTER_AGENT_AUTH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: datadog-agent
+              key: token
+      volumeMounts:
+        - name: datadog-agent
+          mountPath: /opt/datadog-agent
+        - name: datadog-run
+          mountPath: /opt/datadog-agent/run
+        - name: datadog-logs
+          mountPath: /var/log/pods
+        - name: datadog-container-logs
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: pointerdir
+          mountPath: /opt/datadog-agent/run
+        - name: apmsocket
+          mountPath: /var/run/datadog/apm.socket
+        - name: apmsocketvolume
+          mountPath: /opt/datadog-agent/run/agent.jar
+          subPath: agent.jar
+          readOnly: true
+  
+  volumes:
+    - name: datadog-agent
+      hostPath:
+        path: /opt/datadog-agent
+    - name: datadog-run
+      emptyDir: {}
+    - name: datadog-logs
+      hostPath:
+        path: /var/log/pods
+    - name: datadog-container-logs
+      hostPath:
+        path: /var/lib/docker/containers
+    - name: pointerdir
+      hostPath:
+        path: /opt/datadog-agent/run
+    - name: apmsocket
+      hostPath:
+        path: /var/run/datadog/apm.socket
+    - name: apmsocketvolume
+      hostPath:
+        path: /opt/datadog-agent/run
+
+# Service for Datadog Agent
+service:
+  type: ClusterIP
+  ports:
+    - port: 8125
+      protocol: UDP
+      name: dogstatsd
+    - port: 8126
+      protocol: TCP
+      name: apm
+

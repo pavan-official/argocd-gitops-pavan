@@ -1,0 +1,46 @@
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: datadog-agent
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://charts.datadoghq.com  # Official Datadog Helm chart
+    chart: datadog
+    targetRevision: 3.26.0  # Update to latest version
+    helm:
+      valueFiles:
+        - $values/spring-petclinic/helm/datadog/values.yaml
+      # API keys should be set via ArgoCD secrets or environment variables
+      # For production, use ArgoCD Secrets:
+      # values: |
+      #   datadog:
+      #     apiKey: "$DATADOG_API_KEY"
+      #     appKey: "$DATADOG_APP_KEY"
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  
+  syncPolicy:
+    automated:
+      prune: false  # Don't auto-prune Datadog agent
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    
+  # Health checks
+  healthChecks:
+    - apiVersion: apps/v1
+      kind: DaemonSet
+      namespace: default
+      name: datadog-agent
+
+

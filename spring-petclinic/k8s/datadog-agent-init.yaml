@@ -1,0 +1,20 @@
+# Datadog Init Container to copy Java Agent
+# This init container will be used in the petclinic deployment
+# It copies the Datadog Java agent from the Datadog agent pod
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datadog-init-script
+data:
+  init.sh: |
+    #!/bin/sh
+    # Wait for Datadog agent to be ready
+    until [ -f /datadog-agent/run/agent.jar ]; do
+      echo "Waiting for Datadog agent..."
+      sleep 2
+    done
+    # Copy Java agent to shared volume
+    cp /datadog-agent/run/agent.jar /datadog-lib/dd-java-agent.jar
+    echo "Datadog Java agent copied successfully"
+
